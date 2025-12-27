@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSafe City</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-light: #f1f5f9;
+            --card-bg: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            max-height: 600px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+        }
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .justify-center { justify-content: center; }
+        .items-center { align-items: center; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .text-center { text-align: center; }
+        .p-4 { padding: 1rem; }
+        .m-4 { margin: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-2xl { font-size: 1.5rem; font-weight: bold; }
+        .text-xl { font-size: 1.25rem; }
+        .text-sm { font-size: 0.875rem; color: #94a3b8; }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        .btn:active { transform: translateY(0); }
+        .btn-green { background: var(--success); }
+        .btn-red { background: var(--danger); }
+
+        /* Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease-in-out;
+            z-index: 10;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Level 1: Password */
+        #password-input {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #475569;
+            color: white;
+            padding: 15px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            width: 80%;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        #password-meter {
+            height: 10px;
+            width: 80%;
+            background: #334155;
+            border-radius: 5px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        #password-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--danger);
+            transition: width 0.3s, background 0.3s;
+        }
+        .feedback-bubble {
+            background: #334155;
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Level 2: Phishing */
+        .email-card {
+            background: white;
+            color: #1e293b;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .email-header { border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; }
+        .sender { font-weight: bold; display: block; }
+        .subject { font-size: 0.9rem; color: #64748b; }
+        .email-body { font-size: 1rem; line-height: 1.5; margin-bottom: 20px; }
+        .hotspot {
+            border: 2px dashed transparent;
+            cursor: help;
+            transition: border 0.2s;
+            padding: 2px;
+            border-radius: 4px;
+        }
+        .hotspot:hover { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+
+        /* Level 3: Device */
+        .device-screen {
+            background: #000;
+            border: 10px solid #333;
+            border-radius: 20px;
+            width: 300px;
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+            flex-grow: 1;
+        }
+        .app-icon {
+            background: var(--primary);
+            border-radius: 12px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .popup-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: black;
+            width: 80%;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            animation: popIn 0.3s;
+        }
+
+        /* Level 4: Canvas */
+        canvas {
+            background: #111;
+            border-radius: 8px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            cursor: crosshair;
+        }
+        .overlay-ui {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        .tool-btn {
+            background: transparent;
+            border: 2px solid #475569;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tool-btn.selected {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        /* Flashcards */
+        .flashcard {
+            background: white;
+            color: #0f172a;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transform: rotate(-1deg);
+        }
+        .flashcard h3 { color: var(--primary); margin-top: 0; }
+        .flashcard-icon { font-size: 4rem; margin-bottom: 20px; display: block; }
+
+        @keyframes popIn {
+            from { transform: translate(-50%, -60%) scale(0.8); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        @keyframes popInSimple {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .level-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Intro Screen -->
+    <div id="screen-intro" class="screen active justify-center">
+        <div style="font-size: 5rem; margin-bottom: 1rem;">🛡️</div>
+        <h1 class="text-2xl" style="font-size: 3rem; margin: 0; background: linear-gradient(to right, #60a5fa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CyberSafe City</h1>
+        <p style="color: #94a3b8; max-width: 400px; text-align: center; margin-bottom: 2rem;">Become the ultimate Cyber Guardian. Master passwords, detect phishing, secure devices, and defend the city grid.</p>
+        <button class="btn btn-green" onclick="game.startLevel(1)">Start Training</button>
+    </div>
+
+    <!-- Level 1: Password Safety -->
+    <div id="screen-level1" class="screen justify-center">
+        <div class="level-badge">Level 1: Password Forge</div>
+        <h2 class="mb-4">Create a Strong Password</h2>
+        <p class="text-sm mb-4">Combine uppercase, lowercase, numbers, and symbols.</p>
+        
+        <input type="text" id="password-input" placeholder="Type password here..." autocomplete="off">
+        <div id="password-meter"><div id="password-fill"></div></div>
+        <div id="password-feedback" class="feedback-bubble hidden">Too short!</div>
+        
+        <div style="margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 80%;">
+            <div id="req-len" style="color: #ef4444;">❌ 8+ Characters</div>
+            <div id="req-num" style="color: #ef4444;">❌ Number</div>
+            <div id="req-sym" style="color: #ef4444;">❌ Symbol</div>
+            <div id="req-case" style="color: #ef4444;">❌ Uppercase</div>
+        </div>
+
+        <button id="l1-next" class="btn btn-green hidden" style="margin-top: 30px;" onclick="game.showFlashcard(1)">Secure Login Success &rarr;</button>
+    </div>
+
+    <!-- Level 2: Phishing -->
+    <div id="screen-level2" class="screen justify-center">
+        <div class="level-badge">Level 2: Phishing Radar</div>
+        <div id="phish-container" class="w-full flex justify-center items-center flex-col">
+            <!-- Dynamic Email Content -->
+        </div>
+        <div class="flex" style="gap: 20px; margin-top: 20px;">
+            <button class="btn btn-red" onclick="level2.decide(true)">🚨 Report Phishing</button>
+            <button class="btn btn-green" onclick="level2.decide(false)">✅ Looks Safe</button>
+        </div>
+        <div id="l2-feedback" class="feedback-bubble hidden" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Level 3: Device Protection -->
+    <div id="screen-level3" class="screen justify-center">
+        <div class="level-badge">Level 3: Device Shield</div>
+        <div class="device-screen">
+            <div style="background: #222; padding: 10px; text-align: center; color: white; font-size: 0.8rem;">12:00 PM 🔋 100%</div>
+            <div class="app-grid">
+                <div class="app-icon">📸</div>
+                <div class="app-icon">💬</div>
+                <div class="app-icon">🌐</div>
+                <div class="app-icon">🏦</div>
+                <div class="app-icon">📧</div>
+                <div class="app-icon">⚙️</div>
+            </div>
+            <!-- Popups generated here -->
+            <div id="device-popup-container"></div>
+        </div>
+        <p class="text-sm" style="margin-top: 20px;">Handle the notifications to keep your device safe!</p>
+        <div id="l3-progress" style="width: 200px; height: 5px; background: #333; margin-top: 10px; border-radius: 5px;">
+            <div id="l3-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+        </div>
+    </div>
+
+    <!-- Level 4: City Simulation -->
+    <div id="screen-level4" class="screen justify-center">
+        <div class="level-badge">Level 4: CyberSafe City</div>
+        <canvas id="city-canvas" width="700" height="450"></canvas>
+        
+        <div class="overlay-ui">
+            <button class="tool-btn selected" id="tool-firewall" onclick="level4.setTool('firewall')">
+                🛡️ Firewall
+                <div class="text-sm" style="font-size: 0.7rem">Block Attacks</div>
+            </button>
+            <button class="tool-btn" id="tool-antivirus" onclick="level4.setTool('antivirus')">
+                🧹 Antivirus
+                <div class="text-sm" style="font-size: 0.7rem">Clean Infected</div>
+            </button>
+            <div style="color: white; padding: 5px 10px; border-left: 1px solid #475569;">
+                <div>City Health: <span id="city-health">100</span>%</div>
+                <div>Time: <span id="city-time">30</span>s</div>
+            </div>
+        </div>
+        <div id="l4-start-overlay" style="position: absolute; background: rgba(0,0,0,0.8); width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 20;">
+            <h2 class="text-2xl mb-4">Protect the City!</h2>
+            <p style="max-width: 400px; text-align: center; margin-bottom: 20px;">Cyber attacks are incoming from the cloud. <br>Use <b>Firewall</b> on buildings before they get hit.<br>Use <b>Antivirus</b> on infected (red) buildings.</p>
+            <button class="btn btn-primary" onclick="level4.startSimulation()">Start Simulation</button>
+        </div>
+    </div>
+
+    <!-- Flashcard Modal -->
+    <div id="screen-flashcard" class="screen justify-center" style="background: rgba(15, 23, 42, 0.95); z-index: 50;">
+        <div class="flashcard">
+            <span id="fc-icon" class="flashcard-icon">💡</span>
+            <h3 id="fc-title">Did You Know?</h3>
+            <p id="fc-body">Loading...</p>
+            <button class="btn btn-primary" onclick="game.nextLevel()">Next Level &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="screen-victory" class="screen justify-center">
+        <div style="font-size: 6rem; margin-bottom: 1rem; animation: popIn 0.5s;">🏆</div>
+        <h1 class="text-2xl" style="font-size: 3rem; color: var(--success);">Certificate of Completion</h1>
+        <p style="max-width: 500px; text-align: center; font-size: 1.2rem; margin-bottom: 2rem;">
+            Congratulations! You have secured the city and proven your skills in password management, threat detection, and system defense.
+        </p>
+        <button class="btn btn-primary" onclick="location.reload()">Play Again</button>
+    </div>
+</div>
+
+<script>
+    // --- Game Engine ---
+    const game = {
+        currentLevel: 0,
+        
+        screens: {
+            intro: document.getElementById('screen-intro'),
+            level1: document.getElementById('screen-level1'),
+            level2: document.getElementById('screen-level2'),
+            level3: document.getElementById('screen-level3'),
+            level4: document.getElementById('screen-level4'),
+            flashcard: document.getElementById('screen-flashcard'),
+            victory: document.getElementById('screen-victory')
+        },
+
+        flashcards: {
+            1: {
+                icon: "🔑",
+                title: "Password Strength",
+                body: "A strong password is your first line of defense. Using a mix of characters makes it exponentially harder for computers to guess. Never reuse passwords across important accounts!"
+            },
+            2: {
+                icon: "🎣",
+                title: "Phishing Tactics",
+                body: "Phishing scams often use urgency ('Act Now!') or fake authority to trick you. Always check the sender's email address carefully and hover over links before clicking."
+            },
+            3: {
+                icon: "📲",
+                title: "Updates & Permissions",
+                body: "Software updates patch security holes. Also, be careful with app permissions—a flashlight app shouldn't need access to your contacts or microphone!"
+            }
+        },
+
+        switchScreen(screenName) {
+            Object.values(this.screens).forEach(s => s.classList.remove('active'));
+            this.screens[screenName].classList.add('active');
+        },
+
+        startLevel(n) {
+            this.currentLevel = n;
+            if (n === 1) {
+                this.switchScreen('level1');
+                level1.init();
+            } else if (n === 2) {
+                this.switchScreen('level2');
+                level2.init();
+            } else if (n === 3) {
+                this.switchScreen('level3');
+                level3.init();
+            } else if (n === 4) {
+                this.switchScreen('level4');
+                level4.init();
+            }
+        },
+
+        showFlashcard(afterLevel) {
+            const data = this.flashcards[afterLevel];
+            document.getElementById('fc-icon').innerText = data.icon;
+            document.getElementById('fc-title').innerText = data.title;
+            document.getElementById('fc-body').innerText = data.body;
+            this.switchScreen('flashcard');
+        },
+
+        nextLevel() {
+            const next = this.currentLevel + 1;
+            if (next > 4) {
+                this.switchScreen('victory');
+            } else {
+                this.startLevel(next);
+            }
+        }
+    };
+
+    // --- Level 1: Password ---
+    const level1 = {
+        input: document.getElementById('password-input'),
+        meter: document.getElementById('password-fill'),
+        btn: document.getElementById('l1-next'),
+        feedback: document.getElementById('password-feedback'),
+        reqs: {
+            len: document.getElementById('req-len'),
+            num: document.getElementById('req-num'),
+            sym: document.getElementById('req-sym'),
+            case: document.getElementById('req-case')
+        },
+        
+        init() {
+            this.input.value = '';
+            this.input.addEventListener('input', () => this.check());
+            this.updateUI(0, false, false, false, false);
+        },
+
+        check() {
+            const val = this.input.value;
+            const hasLen = val.length >= 8;
+            const hasNum = /\d/.test(val);
+            const hasSym = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+            const hasCase = /[A-Z]/.test(val) && /[a-z]/.test(val);
+
+            // Calculate Score (0-100)
+            let score = 0;
+            if(val.length > 0) score += 10;
+            if(hasLen) score += 20;
+            if(hasNum) score += 20;
+            if(hasSym) score += 25;
+            if(hasCase) score += 25;
+
+            this.updateUI(score, hasLen, hasNum, hasSym, hasCase);
+        },
+
+        updateUI(score, hasLen, hasNum, hasSym, hasCase) {
+            this.meter.style.width = `${score}%`;
+            
+            // Color grading
+            if(score < 40) this.meter.style.background = '#ef4444'; // red
+            else if(score < 80) this.meter.style.background = '#f59e0b'; // orange
+            else this.meter.style.background = '#10b981'; // green
+
+            // Update Checklist
+            const setStatus = (el, valid) => {
+                el.innerHTML = valid ? '✅ ' + el.innerText.substring(2) : '❌ ' + el.innerText.substring(2);
+                el.style.color = valid ? '#10b981' : '#ef4444';
+            };
+
+            setStatus(this.reqs.len, hasLen);
+            setStatus(this.reqs.num, hasNum);
+            setStatus(this.reqs.sym, hasSym);
+            setStatus(this.reqs.case, hasCase);
+
+            if (score === 100) {
+                this.feedback.innerText = "Excellent! That's a strong password.";
+                this.feedback.classList.remove('hidden');
+                this.feedback.style.color = '#10b981';
+                this.btn.classList.remove('hidden');
+                this.input.disabled = true;
+            } else {
+                this.btn.classList.add('hidden');
+            }
+        }
+    };
+
+    // --- Level 2: Phishing ---
+    const level2 = {
+        scenarios: [
+            {
+                subject: "URGENT: Bank Account Suspended",
+                sender: "Security Team <admin@banc-of-america.security-check.xy>",
+                body: "Dear Customer,<br>Your account has been flagged for suspicious activity. <span class='hotspot'>Click here</span> immediately to verify your identity or your funds will be frozen.",
+                isPhishing: true,
+                reason: "Suspicious sender domain and creates false urgency."
+            },
+            {
+                subject: "Project Update: Q3 Report",
+                sender: "Sarah Jenkins <s.jenkins@company.com>",
+                body: "Hi Team,<br>Attached is the Q3 performance report we discussed in the meeting yesterday. Let me know if you have questions.<br>Best,<br>Sarah",
+                isPhishing: false,
+                reason: "Legitimate context and standard company email domain."
+            },
+            {
+                subject: "You won a free iPhone 15!!",
+                sender: "Apple Winner <prize@free-giveaway-alerts.net>",
+                body: "CONGRATS! You have been selected randomly to win a NEW iPhone. Just pay $5 shipping to claim it now.",
+                isPhishing: true,
+                reason: "Too good to be true, asks for payment, generic sender."
+            }
+        ],
+        idx: 0,
+        container: document.getElementById('phish-container'),
+        feedback: document.getElementById('l2-feedback'),
+
+        init() {
+            this.idx = 0;
+            this.loadScenario();
+        },
+
+        loadScenario() {
+            if (this.idx >= this.scenarios.length) {
+                game.showFlashcard(2);
+                return;
+            }
+            
+            const s = this.scenarios[this.idx];
+            this.feedback.classList.add('hidden');
+            
+            this.container.innerHTML = `
+                <div class="email-card animation-popIn">
+                    <div class="email-header">
+                        <span class="sender">${s.sender}</span>
+                        <span class="subject">${s.subject}</span>
+                    </div>
+                    <div class="email-body">${s.body}</div>
+                </div>
+            `;
+        },
+
+        decide(isReporting) {
+            const s = this.scenarios[this.idx];
+            const correct = (isReporting && s.isPhishing) || (!isReporting && !s.isPhishing);
+
+            this.feedback.classList.remove('hidden');
+            
+            if (correct) {
+                this.feedback.style.color = '#10b981';
+                this.feedback.innerText = "Correct! " + s.reason;
+                setTimeout(() => {
+                    this.idx++;
+                    this.loadScenario();
+                }, 2000);
+            } else {
+                this.feedback.style.color = '#ef4444';
+                this.feedback.innerText = "Oops! " + (s.isPhishing ? "That was a scam." : "That was safe.");
+            }
+        }
+    };
+
+    // --- Level 3: Device ---
+    const level3 = {
+        popupContainer: document.getElementById('device-popup-container'),
+        progressBar: document.getElementById('l3-bar'),
+        tasks: [
+            { text: "System Update Available (Security Patch)", type: "good", btn1: "Update Now", btn2: "Ignore" },
+            { text: "Flashlight App requests access to CONTACTS", type: "bad", btn1: "Allow", btn2: "Deny" },
+            { text: "Antivirus: Malware Detected!", type: "good", btn1: "Quarantine", btn2: "Keep File" },
+            { text: "Connect to 'Free_Public_Wifi_NoPass'?", type: "bad", btn1: "Connect", btn2: "Forget" }
+        ],
+        completed: 0,
+        
+        init() {
+            this.completed = 0;
+            this.updateProgress();
+            this.spawnTask();
+        },
+
+        spawnTask() {
+            if (this.completed >= 4) {
+                setTimeout(() => game.showFlashcard(3), 1000);
+                return;
+            }
+
+            const task = this.tasks[this.completed];
+            const div = document.createElement('div');
+            div.className = 'popup-modal';
+            div.innerHTML = `
+                <p><b>Notification</b><br>${task.text}</p>
+                <div style="display:flex; justify-content:center; gap:10px;">
+                    <button class="btn btn-green" style="padding: 5px 10px; font-size: 0.8rem" onclick="level3.handle(true)">${task.btn1}</button>
+                    <button class="btn btn-red" style="padding: 5px 10px; font-size: 0.8rem" onclick="level3.handle(false)">${task.btn2}</button>
+                </div>
+            `;
+            this.popupContainer.innerHTML = '';
+            this.popupContainer.appendChild(div);
+        },
+
+        handle(firstOption) {
+            const task = this.tasks[this.completed];
+            // Good tasks want first option (Update/Quarantine)
+            // Bad tasks want second option (Deny/Forget)
+            let success = false;
+            
+            if (task.type === "good" && firstOption) success = true;
+            if (task.type === "bad" && !firstOption) success = true;
+
+            if (success) {
+                this.completed++;
+                this.updateProgress();
+                this.popupContainer.innerHTML = `<div class="popup-modal" style="color:green">Safe choice! ✅</div>`;
+                setTimeout(() => this.spawnTask(), 1000);
+            } else {
+                this.popupContainer.innerHTML += `<div style="color:red; margin-top:5px; font-size:0.8rem">Unsafe choice. Try again.</div>`;
+            }
+        },
+
+        updateProgress() {
+            this.progressBar.style.width = `${(this.completed / 4) * 100}%`;
+        }
+    };
+
+    // --- Level 4: City Simulation (Canvas) ---
+    const level4 = {
+        canvas: document.getElementById('city-canvas'),
+        ctx: document.getElementById('city-canvas').getContext('2d'),
+        startOverlay: document.getElementById('l4-start-overlay'),
+        healthEl: document.getElementById('city-health'),
+        timeEl: document.getElementById('city-time'),
+        
+        activeTool: 'firewall',
+        isRunning: false,
+        timeLeft: 30,
+        cityHealth: 100,
+        lastTime: 0,
+        
+        buildings: [],
+        attacks: [],
+        particles: [],
+
+        init() {
+            this.setupBuildings();
+            this.draw(); // Initial draw
+            this.canvas.addEventListener('mousedown', (e) => this.onClick(e));
+        },
+
+        setTool(t) {
+            this.activeTool = t;
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById(`tool-${t}`).classList.add('selected');
+        },
+
+        setupBuildings() {
+            this.buildings = [
+                { x: 100, y: 300, w: 60, h: 80, type: '🏠', hp: 100, shield: 0, infected: false },
+                { x: 200, y: 250, w: 80, h: 130, type: '🏥', hp: 100, shield: 0, infected: false }, // Hospital
+                { x: 350, y: 280, w: 70, h: 100, type: '🏦', hp: 100, shield: 0, infected: false }, // Bank
+                { x: 500, y: 300, w: 60, h: 80, type: '🏠', hp: 100, shield: 0, infected: false },
+                { x: 600, y: 260, w: 70, h: 120, type: '🏢', hp: 100, shield: 0, infected: false }
+            ];
+            this.attacks = [];
+            this.timeLeft = 30;
+            this.cityHealth = 100;
+        },
+
+        startSimulation() {
+            this.startOverlay.classList.add('hidden');
+            this.isRunning = true;
+            this.lastTime = performance.now();
+            this.timerInterval = setInterval(() => {
+                this.timeLeft--;
+                this.timeEl.innerText = this.timeLeft;
+                if(this.timeLeft <= 0) this.endSimulation(true);
+            }, 1000);
+            
+            requestAnimationFrame((t) => this.loop(t));
+        },
+
+        endSimulation(win) {
+            this.isRunning = false;
+            clearInterval(this.timerInterval);
+            if (win && this.cityHealth > 0) {
+                game.nextLevel();
+            } else {
+                alert("The city grid collapsed! Try again.");
+                this.setupBuildings();
+                this.startOverlay.classList.remove('hidden');
+                this.draw();
+            }
+        },
+
+        spawnAttack() {
+            if (Math.random() < 0.05) { // 5% chance per frame approx
+                const target = this.buildings[Math.floor(Math.random() * this.buildings.length)];
+                this.attacks.push({
+                    x: Math.random() * 700,
+                    y: -20,
+                    tx: target.x + target.w/2,
+                    ty: target.y,
+                    speed: 2 + Math.random(),
+                    targetIndex: this.buildings.indexOf(target)
+                });
+            }
+        },
+
+        update(dt) {
+            // Update Attacks
+            this.spawnAttack();
+            
+            for (let i = this.attacks.length - 1; i >= 0; i--) {
+                const a = this.attacks[i];
+                const dx = a.tx - a.x;
+                const dy = a.ty - a.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < 5) {
+                    // Hit
+                    const b = this.buildings[a.targetIndex];
+                    if (b.shield > 0) {
+                        // Blocked
+                        this.createParticles(a.tx, a.ty, '#3b82f6');
+                    } else {
+                        // Damage/Infect
+                        b.infected = true;
+                        b.hp -= 20;
+                        this.createParticles(a.tx, a.ty, '#ef4444');
+                    }
+                    this.attacks.splice(i, 1);
+                } else {
+                    // Move
+                    a.x += (dx / dist) * a.speed;
+                    a.y += (dy / dist) * a.speed;
+                }
+            }
+
+            // Update Buildings
+            let totalHp = 0;
+            this.buildings.forEach(b => {
+                if (b.shield > 0) b.shield -= dt * 0.001; // Decrease shield time
+                if (b.infected) b.hp -= dt * 0.01; // Infection damage over time
+                if (b.hp < 0) b.hp = 0;
+                totalHp += b.hp;
+            });
+
+            this.cityHealth = Math.floor(totalHp / this.buildings.length);
+            this.healthEl.innerText = this.cityHealth;
+            if (this.cityHealth <= 0) this.endSimulation(false);
+
+            // Update Particles
+            this.particles.forEach((p, i) => {
+                p.life -= 0.05;
+                p.x += p.vx;
+                p.y += p.vy;
+                if(p.life <= 0) this.particles.splice(i, 1);
+            });
+        },
+
+        createParticles(x, y, color) {
+            for(let i=0; i<5; i++) {
+                this.particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    life: 1,
+                    color: color
+                });
+            }
+        },
+
+        draw() {
+            const ctx = this.ctx;
+            ctx.clearRect(0, 0, 700, 450);
+
+            // Ground
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 380, 700, 70);
+
+            // Buildings
+            this.buildings.forEach(b => {
+                // Draw Structure
+                ctx.fillStyle = b.infected ? '#451a1a' : '#334155';
+                if(b.hp <= 0) ctx.fillStyle = '#000'; // Destroyed
+                ctx.fillRect(b.x, b.y, b.w, b.h);
+
+                // Windows
+                ctx.fillStyle = b.hp > 0 ? '#fbbf24' : '#333';
+                for(let wx = b.x + 10; wx < b.x + b.w - 10; wx+=15) {
+                    for(let wy = b.y + 10; wy < b.y + b.h - 10; wy+=20) {
+                        ctx.fillRect(wx, wy, 8, 12);
+                    }
+                }
+
+                // Emoji Icon
+                ctx.font = "20px Arial";
+                ctx.fillText(b.type, b.x + b.w/2 - 10, b.y - 10);
+
+                // Shield Effect
+                if (b.shield > 0) {
+                    ctx.strokeStyle = `rgba(59, 130, 246, ${Math.min(1, b.shield)})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(b.x + b.w/2, b.y + b.h/2, Math.max(b.w, b.h)/1.5, 0, Math.PI*2);
+                    ctx.stroke();
+                }
+
+                // Health Bar
+                ctx.fillStyle = 'red';
+                ctx.fillRect(b.x, b.y - 5, b.w, 3);
+                ctx.fillStyle = '#10b981';
+                ctx.fillRect(b.x, b.y - 5, b.w * (b.hp/100), 3);
+            });
+
+            // Attacks
+            this.attacks.forEach(a => {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(a.x, a.y, 4, 0, Math.PI*2);
+                ctx.fill();
+                // Trail
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(a.x - (a.tx-a.x)*0.1, a.y - (a.ty-a.y)*0.1);
+                ctx.stroke();
+            });
+
+            // Particles
+            this.particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.fillRect(p.x, p.y, 3, 3);
+                ctx.globalAlpha = 1;
+            });
+        },
+
+        loop(time) {
+            if (!this.isRunning) return;
+            const dt = time - this.lastTime;
+            this.lastTime = time;
+            
+            this.update(dt);
+            this.draw();
+            requestAnimationFrame((t) => this.loop(t));
+        },
+
+        onClick(e) {
+            if(!this.isRunning) return;
+            const rect = this.canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            this.buildings.forEach(b => {
+                if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                    if (this.activeTool === 'firewall') {
+                        b.shield = 3; // 3 seconds shield
+                    } else if (this.activeTool === 'antivirus') {
+                        if (b.infected) {
+                            b.infected = false;
+                            b.hp = Math.min(100, b.hp + 20); // Heal slightly on cure
+                        }
+                    }
+                }
+            });
+        }
+    };
+
+    // Start
+    // game.startLevel(1); 
+</script>
+</body>
+</html>
