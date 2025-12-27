@@ -1,4 +1,4 @@
-# CyberSafe-City
+# CyberSafe-City Mini Web Game
 CyberSafe City, a single-file, interactive educational game that takes players through four distinct levels of cybersecurity training.
 
 Game Overview
