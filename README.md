@@ -1,4 +1,4 @@
-# CyberSafe-City Mini Web Game
+# CyberSafe-City Web Game
 CyberSafe City, a single-file, interactive educational game that takes players through four distinct levels of cybersecurity training.
 
 Game Overview
@@ -6,4 +6,4 @@ Tech Stack: HTML, CSS (Tailwind-style classes + custom animations), and JavaScri
 
 Structure: The game uses a state machine to manage transitions between Levels, Flashcards, and the Simulation.
 
-Assets: All visual elements are generated programmatically (CSS shapes, Canvas drawing, Emojis) to ensure the file is self-contained and lightweight.
+Assets: All visual elements are generated programmatically (CSS shapes, Animations, Canvas drawing, Emojis) to ensure the file is self-contained and lightweight.
